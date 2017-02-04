@@ -1,8 +1,8 @@
 package code.donbonifacio.scavenger8;
 
 import junit.framework.TestCase;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,8 +19,8 @@ public final class BodyRequesterTest extends TestCase {
      */
     public void testRequestUrlBody() throws InterruptedException {
         final PageInfo page = PageInfo.fromUrl("http://httpstat.us/200");
-        final BlockingDeque<PageInfo> urlsQueue = new LinkedBlockingDeque<>(1);
-        final BlockingDeque<PageInfo> targetQueue = new LinkedBlockingDeque<>(1);
+        final BlockingQueue<PageInfo> urlsQueue = new LinkedBlockingQueue<>(1);
+        final BlockingQueue<PageInfo> targetQueue = new LinkedBlockingQueue<>(1);
         final BodyRequester requester = new BodyRequester(urlsQueue, targetQueue);
 
         requester.start();

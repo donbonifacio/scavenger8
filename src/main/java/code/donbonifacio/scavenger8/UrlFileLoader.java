@@ -7,7 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class UrlFileLoader {
 
-    private final BlockingDeque<PageInfo> receiver;
+    private final BlockingQueue<PageInfo> receiver;
     private final String fileName;
     private final ExecutorService executorService;
     static final Logger logger = LoggerFactory.getLogger(UrlFileLoader.class);
@@ -37,7 +37,7 @@ public final class UrlFileLoader {
      * @param fileName the file name to load from
      * @param receiver the queue to put PageInfo's
      */
-    public UrlFileLoader(final String fileName, final BlockingDeque<PageInfo> receiver) {
+    public UrlFileLoader(final String fileName, final BlockingQueue<PageInfo> receiver) {
         this.receiver = checkNotNull(receiver);
         this.fileName = checkNotNull(fileName);
         this.executorService = Executors.newSingleThreadExecutor();
@@ -53,6 +53,7 @@ public final class UrlFileLoader {
          * Streams lines from a file to a queue.
          */
         @Override
+        @SuppressWarnings("squid:S1612") // don't know how to remove this!
         public void run() {
             logger.info("Starting loading lines from {}", fileName);
 
@@ -61,10 +62,11 @@ public final class UrlFileLoader {
                 br.lines()
                         .map(String::trim)
                         .map(String::toLowerCase)
+                        .map(domain -> String.format("http://%s", domain))
                         .map(PageInfo::fromUrl)
                         .forEach(info -> submit(info));
 
-                logger.trace("Registering url {}", PageInfo.POISON);
+                logger.debug("Registering url {}", PageInfo.POISON);
                 receiver.put(PageInfo.POISON);
 
             } catch (IOException e) {
@@ -82,7 +84,7 @@ public final class UrlFileLoader {
          */
         private void submit(final PageInfo info) {
             try {
-                logger.trace("Registering url {}", info.getUrl());
+                logger.debug("Registering url {}", info.getUrl());
                 receiver.put(info);
             } catch(InterruptedException e) {
                 logger.error("Sending to queue interrupted", e);

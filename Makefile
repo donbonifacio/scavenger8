@@ -13,3 +13,6 @@ ci:
 
 uberjar:
 	mvn clean assembly:assembly -DdescriptorId=jar-with-dependencies
+
+rupeal: uberjar
+	java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug -jar target/scavenger8-0.1.0-jar-with-dependencies.jar -file rupeal.txt

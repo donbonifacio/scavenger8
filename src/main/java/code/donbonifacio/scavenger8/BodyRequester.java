@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,8 +25,8 @@ import java.util.concurrent.Executors;
 public final class BodyRequester {
 
     static final Logger logger = LoggerFactory.getLogger(BodyRequester.class);
-    private final BlockingDeque<PageInfo> urlsQueue;
-    private final BlockingDeque<PageInfo> processorsQueue;
+    private final BlockingQueue<PageInfo> urlsQueue;
+    private final BlockingQueue<PageInfo> processorsQueue;
     private final ExecutorService executorService;
     private final ExecutorService gateKeeper;
 
@@ -36,7 +36,7 @@ public final class BodyRequester {
      * @param urlsQueue the source queue
      * @param processorsQueue the destination queue
      */
-    public BodyRequester(final BlockingDeque<PageInfo> urlsQueue, final BlockingDeque<PageInfo> processorsQueue) {
+    public BodyRequester(final BlockingQueue<PageInfo> urlsQueue, final BlockingQueue<PageInfo> processorsQueue) {
         this(urlsQueue, processorsQueue, 12);
     }
 
@@ -47,7 +47,7 @@ public final class BodyRequester {
      * @param processorsQueue the destination queue
      * @param nThreads the number of worker threads to spawn
      */
-    public BodyRequester(final BlockingDeque<PageInfo> urlsQueue, final BlockingDeque<PageInfo> processorsQueue, int nThreads) {
+    public BodyRequester(final BlockingQueue<PageInfo> urlsQueue, final BlockingQueue<PageInfo> processorsQueue, int nThreads) {
         this.urlsQueue = urlsQueue;
         this.processorsQueue = processorsQueue;
         this.executorService = Executors.newFixedThreadPool(nThreads);
@@ -74,7 +74,7 @@ public final class BodyRequester {
                     PageInfo page = urlsQueue.take();
 
                     if(page.equals(PageInfo.POISON)) {
-                        logger.trace("Work finished, submitting {}", page);
+                        logger.debug("Work finished, submitting {}", page);
                         processorsQueue.put(page);
                         break;
                     }
@@ -129,7 +129,7 @@ public final class BodyRequester {
                 con.setRequestProperty("User-Agent", "https://github.com/donbonifacio/scavenger8");
 
                 final int responseCode = con.getResponseCode();
-                logger.debug("Got status {} for {}", responseCode, info);
+                logger.trace("Got status {} for {}", responseCode, info);
 
                 BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 String inputLine;
@@ -141,7 +141,7 @@ public final class BodyRequester {
                 in.close();
 
                 PageInfo withBody = info.withBody(response.toString());
-                logger.trace("Submitting {}", withBody);
+                logger.debug("Submitting {}", withBody);
 
                 processorsQueue.put(withBody);
 

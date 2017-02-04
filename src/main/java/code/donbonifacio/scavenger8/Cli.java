@@ -5,6 +5,9 @@ import com.beust.jcommander.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
  * Command line interface to access the lib's functionality.
  */
@@ -17,6 +20,12 @@ public final class Cli {
      *
      */
     private static class CliArgs {
+
+        /**
+         * Set the file
+         */
+        @Parameter(names = "-file", description = "Source file")
+        public String fileName;
 
         /**
          * Show help/usage flag
@@ -59,6 +68,15 @@ public final class Cli {
             commander.usage();
         } else {
             logger.info("scavenger8");
+
+            BlockingQueue<PageInfo> urls = new LinkedBlockingQueue<>(100);
+            BlockingQueue<PageInfo> pages = new LinkedBlockingQueue<>(100);
+
+            UrlFileLoader loader = new UrlFileLoader(args.fileName, urls);
+            BodyRequester requester = new BodyRequester(urls, pages);
+
+            loader.start();
+            requester.start();
         }
 
     }
