@@ -1,0 +1,17 @@
+language: java
+jdk:
+  - oraclejdk8
+
+script:
+  - make ci
+
+addons:
+  sonarqube:
+    token:
+      #secure: "s8Tof6gEZIo/Nb/d78/04gtuSyHel7F40rnQmxBawEY7yx17xi9+h5Y1bk21arHvXnMEMnZ6n1cTmPzTYdHXcaUWpwds/uFbb9YPAZRoaFlXsr9XPYStSiUeTdz+WsLbkQR46RkoaTV4eevSG5+l6rif74R6aYwVMHjescqzMx6JY8XhFgnolxQasxWbTE9cZUTqcbueEfD+3+jjcR1H8hydbZETnZkcAcF90IcBB4ZFOIt0dhMthrjYX66LxpS2rTg+3WJfn6Ss4bUmTJGnpCD5gR+lJ3UxmRMYsBhfrTj+LhiorqR+HjSBBSkxdD4TuLteqKcN7mbUyU3HB9TZ5ck5ojboeltB9gB6IGixEN53QC/3W9kh44qQZl/aADsLt77ba9gOlK8zVdONVLKflra+AYZ+5p3axMUkF6M/hXHhcHWEz7LRIsWBGfU4caNDrLbXsslQ+wKiCqza75U49qPy/ytJ0KB//mm5w582OHulZpp33xHezTQ3N5i64NnXMwuPUTXI+WRWtY867omDNxK3fXJI1n1FtxOk2vtYKf4KFPtOnnv7i8ifyTpdG3J/E+mPTrA0P+n8ly2+S0zTTBlK6+5CB4oG6BQXHaABldfDUpoJrUdg8/yrmbGxMIWJs+9vIbFLmWRDInYw+7a+FMBfHoJRYOaMRPq4RxpU3XU="
+
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
