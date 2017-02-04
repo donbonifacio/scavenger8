@@ -33,7 +33,7 @@ public final class Cli {
             if(help) {
                 return "Args: help";
             }
-            return String.format("??");
+            return "??";
         }
     }
 
