@@ -1,6 +1,6 @@
 
 test:
-	mvn test
+	mvn -Dorg.slf4j.simpleLogger.defaultLogLevel=trace -e clean test
 
 ci:
 	mvn -Dcobertura.report.format=xml \
