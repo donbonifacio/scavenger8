@@ -60,15 +60,34 @@ public final class UrlFileLoader {
 
                 br.lines()
                         .map(String::trim)
-                        .forEach(url -> {
-                            logger.trace("Registering url {}", url);
-                            receiver.push(PageInfo.fromUrl(url));
-                        });
+                        .map(String::toLowerCase)
+                        .map(PageInfo::fromUrl)
+                        .forEach(info -> submit(info));
+
+                logger.trace("Registering url {}", PageInfo.POISON);
+                receiver.put(PageInfo.POISON);
 
             } catch (IOException e) {
                 logger.error("Error reading from the source file", e);
+            } catch(InterruptedException e) {
+                logger.error("Sending to queue interrupted", e);
+                Thread.currentThread().interrupt();
             }
+        }
 
+        /**
+         * Submits the given page info to the destination queue.
+         *
+         * @param info the url to submit
+         */
+        private void submit(final PageInfo info) {
+            try {
+                logger.trace("Registering url {}", info.getUrl());
+                receiver.put(info);
+            } catch(InterruptedException e) {
+                logger.error("Sending to queue interrupted", e);
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -78,5 +97,14 @@ public final class UrlFileLoader {
     public void start() {
         executorService.execute(new Runner());
         executorService.shutdown();
+    }
+
+    /**
+     * True if this service is shutdown.
+     *
+     * @return true if it's shutdown
+     */
+    public boolean isShutdown() {
+        return executorService.isShutdown();
     }
 }

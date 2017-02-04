@@ -25,6 +25,11 @@ public final class UrlFileLoaderTest extends TestCase {
         PageInfo page = queue.poll(5, TimeUnit.SECONDS);
         assertNotNull("Expected an object on the queue", page);
         assertEquals(page.getUrl(), "www.google.com");
+
+        PageInfo poison = queue.poll(5, TimeUnit.SECONDS);
+        assertEquals("A poison should be sent last", poison, PageInfo.POISON);
+
+        assertTrue("After finishing should be shutdown", loader.isShutdown());
     }
 
 }

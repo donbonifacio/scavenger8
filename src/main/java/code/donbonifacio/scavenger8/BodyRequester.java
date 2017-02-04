@@ -7,8 +7,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +29,6 @@ public final class BodyRequester {
     private final BlockingDeque<PageInfo> processorsQueue;
     private final ExecutorService executorService;
     private final ExecutorService gateKeeper;
-    private final int nThreads;
 
     /**
      * Creates a new BodyRequester.
@@ -53,7 +50,6 @@ public final class BodyRequester {
     public BodyRequester(final BlockingDeque<PageInfo> urlsQueue, final BlockingDeque<PageInfo> processorsQueue, int nThreads) {
         this.urlsQueue = urlsQueue;
         this.processorsQueue = processorsQueue;
-        this.nThreads = nThreads;
         this.executorService = Executors.newFixedThreadPool(nThreads);
         this.gateKeeper = Executors.newSingleThreadExecutor();
     }
@@ -68,6 +64,9 @@ public final class BodyRequester {
      */
     private class Runner implements Runnable {
 
+        /**
+         * Main loop, gathers and distributes work.
+         */
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -116,6 +115,7 @@ public final class BodyRequester {
          * Performs the necessary HTTP requests to obtain the response body
          * for an URL.
          */
+        @Override
         public void run() {
             final String url = info.getUrl();
             logger.trace("Requesting page body for {}", info);
@@ -133,7 +133,7 @@ public final class BodyRequester {
 
                 BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 String inputLine;
-                StringBuffer response = new StringBuffer();
+                StringBuilder response = new StringBuilder();
 
                 while ((inputLine = in.readLine()) != null) {
                     response.append(inputLine);
