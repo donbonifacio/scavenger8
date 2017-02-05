@@ -30,6 +30,7 @@ public final class UrlFileLoaderTest extends TestCase {
         assertEquals("A poison should be sent last", poison, PageInfo.POISON);
 
         assertTrue("After finishing should be shutdown", loader.isShutdown());
+        assertEquals(1, loader.getSubmitedUrlsCount());
     }
 
 }

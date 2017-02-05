@@ -12,6 +12,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The BodyRequester class is responsible for fetching raw PageInfo's from
@@ -30,6 +31,8 @@ public final class BodyRequester {
     private final BlockingQueue<PageInfo> processorsQueue;
     private final ExecutorService executorService;
     private final ExecutorService gateKeeper;
+    private final AtomicLong taskCounter = new AtomicLong();
+    private final AtomicLong processedCounter = new AtomicLong();
 
     /**
      * Creates a new BodyRequester.
@@ -90,6 +93,7 @@ public final class BodyRequester {
                     }
 
                     logger.trace("Processing body request for {}", page);
+                    taskCounter.incrementAndGet();
                     executorService.execute(new RequestBody(page));
 
                 } catch (InterruptedException e) {
@@ -151,6 +155,8 @@ public final class BodyRequester {
                 PageInfo withBody = info.withBody(response.toString());
                 logger.debug("Submitting {}", withBody);
 
+                taskCounter.decrementAndGet();
+                processedCounter.incrementAndGet();
                 processorsQueue.put(withBody);
 
             } catch(IOException | InterruptedException ex) {
@@ -175,6 +181,24 @@ public final class BodyRequester {
      */
     public boolean isShutdown() {
         return executorService.isShutdown();
+    }
+
+    /**
+     * Gets the number of current tasks running and/or scheduled to run.
+     *
+     * @return the count of tasks
+     */
+    public long getTaskCount() {
+        return taskCounter.get();
+    }
+
+    /**
+     * Gets the number of processed tasks.
+     *
+     * @return the count of processed tasks
+     */
+    public long getProcessedCount() {
+        return processedCounter.get();
     }
 
 }

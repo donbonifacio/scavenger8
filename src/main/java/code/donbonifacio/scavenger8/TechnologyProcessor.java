@@ -11,6 +11,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -31,6 +32,8 @@ public final class TechnologyProcessor {
     private final BlockingQueue<PageInfo> technologies;
     private final ExecutorService executorService;
     private final ExecutorService gateKeeper;
+    private final AtomicLong taskCounter = new AtomicLong();
+    private final AtomicLong processedCounter = new AtomicLong();
 
     /**
      * The list ot matchers to process. Add new ones here!
@@ -93,6 +96,7 @@ public final class TechnologyProcessor {
                     }
 
                     logger.trace("Processing technology matchers {}", page);
+                    taskCounter.incrementAndGet();
                     executorService.execute(new ProcessTechnologies(page));
 
                 } catch (InterruptedException e) {
@@ -137,6 +141,8 @@ public final class TechnologyProcessor {
                 PageInfo withMatches = info.withMatches(matches);
 
                 logger.debug("Processed {}", withMatches);
+                taskCounter.decrementAndGet();
+                processedCounter.incrementAndGet();
                 technologies.put(withMatches);
 
             } catch (InterruptedException e) {
@@ -161,5 +167,23 @@ public final class TechnologyProcessor {
      */
     public boolean isShutdown() {
         return executorService.isShutdown();
+    }
+
+    /**
+     * Gets the number of current tasks running and/or scheduled to run.
+     *
+     * @return the count of tasks
+     */
+    public long getTaskCount() {
+        return taskCounter.get();
+    }
+
+    /**
+     * Gets the number of processed tasks.
+     *
+     * @return the count of processed tasks
+     */
+    public long getProcessedCount() {
+        return processedCounter.get();
     }
 }

@@ -35,6 +35,8 @@ public final class BodyRequesterTest extends TestCase {
         assertEquals(poison, PageInfo.POISON);
 
         assertTrue(requester.isShutdown());
+        assertEquals(0, requester.getTaskCount());
+        assertEquals(1, requester.getProcessedCount());
     }
 
 }

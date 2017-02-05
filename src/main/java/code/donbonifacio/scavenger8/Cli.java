@@ -75,14 +75,29 @@ public final class Cli {
             BlockingQueue<PageInfo> processed = new LinkedBlockingQueue<>(100);
 
             UrlFileLoader loader = new UrlFileLoader(args.fileName, urls);
-            BodyRequester requester = new BodyRequester(urls, pages);
-            TechnologyProcessor processor = new TechnologyProcessor(pages, processed);
+            BodyRequester requester = new BodyRequester(urls, pages, 80);
+            TechnologyProcessor processor = new TechnologyProcessor(pages, processed, 4);
             OutputSink sink = new OutputSink(processed);
+
+            MetricsMonitor.Args systemArgs = new MetricsMonitor.Args();
+            systemArgs.loader = loader;
+            systemArgs.urlsQueue = urls;
+            systemArgs.bodyRequester = requester;
+            systemArgs.pagesQueue = pages;
+            systemArgs.processor = processor;
+            systemArgs.technologiesQueue = processed;
+            systemArgs.outputSink = sink;
+
+            MetricsMonitor metrics = new MetricsMonitor(
+                    "metrics.txt",
+                    systemArgs
+            );
 
             loader.start();
             requester.start();
             processor.start();
             sink.start();
+            metrics.start();
         }
 
     }

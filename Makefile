@@ -16,3 +16,6 @@ uberjar:
 
 rupeal: uberjar
 	java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug -jar target/scavenger8-0.1.0-jar-with-dependencies.jar -file rupeal.txt
+
+alexa1M: uberjar
+	java -Dorg.slf4j.simpleLogger.defaultLogLevel=info -jar target/scavenger8-0.1.0-jar-with-dependencies.jar -file alexa1M.txt

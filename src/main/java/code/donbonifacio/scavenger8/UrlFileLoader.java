@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -29,6 +30,7 @@ public final class UrlFileLoader {
     private final BlockingQueue<PageInfo> receiver;
     private final String fileName;
     private final ExecutorService executorService;
+    private final AtomicLong submittedUrls = new AtomicLong();
     static final Logger logger = LoggerFactory.getLogger(UrlFileLoader.class);
 
     /**
@@ -67,6 +69,7 @@ public final class UrlFileLoader {
                         .forEach(info -> submit(info));
 
                 logger.debug("Registering url {}", PageInfo.POISON);
+
                 receiver.put(PageInfo.POISON);
 
             } catch (IOException e) {
@@ -85,12 +88,22 @@ public final class UrlFileLoader {
         private void submit(final PageInfo info) {
             try {
                 logger.debug("Registering url {}", info.getUrl());
+                submittedUrls.incrementAndGet();
                 receiver.put(info);
             } catch(InterruptedException e) {
                 logger.error("Sending to queue interrupted", e);
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Gets how may urls have been submitted.
+     *
+     * @return the submitted url count
+     */
+    public long getSubmitedUrlsCount() {
+        return submittedUrls.get();
     }
 
     /**

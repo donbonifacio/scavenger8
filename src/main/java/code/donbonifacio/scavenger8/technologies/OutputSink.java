@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -17,13 +18,13 @@ public final class OutputSink {
 
     private final BlockingQueue<PageInfo> input;
     private final ExecutorService executorService;
-    static final Logger logger = LoggerFactory.getLogger(OutputSink.class);
+    private static final Logger logger = LoggerFactory.getLogger(OutputSink.class);
+    private final AtomicLong processedCounter = new AtomicLong();
 
     /**
      * Creates a new OutputSink.
      *
-     * @param fileName the file name to load from
-     * @param receiver the queue to put PageInfo's
+     * @param input the input queue
      */
     public OutputSink(final BlockingQueue<PageInfo> input) {
         this.input = checkNotNull(input);
@@ -50,6 +51,8 @@ public final class OutputSink {
                         break;
                     }
 
+                    processedCounter.incrementAndGet();
+
                 } catch (InterruptedException e) {
                     logger.error("OutputSink interrupted", e);
                     Thread.currentThread().interrupt();
@@ -74,5 +77,14 @@ public final class OutputSink {
      */
     public boolean isShutdown() {
         return executorService.isShutdown();
+    }
+
+    /**
+     * Gets the number of processed objects.
+     *
+     * @return the total count
+     */
+    public long getProcessedCount() {
+        return processedCounter.get();
     }
 }
