@@ -31,7 +31,7 @@ public final class UrlFileLoader {
     private final String fileName;
     private final ExecutorService executorService;
     private final AtomicLong submittedUrls = new AtomicLong();
-    static final Logger logger = LoggerFactory.getLogger(UrlFileLoader.class);
+    private static final Logger logger = LoggerFactory.getLogger(UrlFileLoader.class);
 
     /**
      * Creates a new UrlFileLoader.

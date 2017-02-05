@@ -61,7 +61,7 @@ public final class PageInfo {
      * @return true if poison
      */
     public static boolean isPoison(final PageInfo page) {
-        return page == POISON;
+        return page.equals(POISON);
     }
 
     /**

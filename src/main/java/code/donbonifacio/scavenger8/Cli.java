@@ -1,12 +1,10 @@
 package code.donbonifacio.scavenger8;
 
-import code.donbonifacio.scavenger8.technologies.OutputSink;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -14,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public final class Cli {
 
-    static final Logger logger = LoggerFactory.getLogger(Cli.class);
+    private static final Logger logger = LoggerFactory.getLogger(Cli.class);
 
     /**
      * Represents CLI arguments passed to the program
@@ -70,34 +68,16 @@ public final class Cli {
         } else {
             logger.info("scavenger8");
 
-            BlockingQueue<PageInfo> urls = new LinkedBlockingQueue<>(100);
-            BlockingQueue<PageInfo> pages = new LinkedBlockingQueue<>(100);
-            BlockingQueue<PageInfo> processed = new LinkedBlockingQueue<>(100);
-
-            UrlFileLoader loader = new UrlFileLoader(args.fileName, urls);
-            BodyRequester requester = new BodyRequester(urls, pages, 80);
-            TechnologyProcessor processor = new TechnologyProcessor(pages, processed, 4);
-            OutputSink sink = new OutputSink(processed);
-
-            MetricsMonitor.Args systemArgs = new MetricsMonitor.Args();
-            systemArgs.loader = loader;
-            systemArgs.urlsQueue = urls;
-            systemArgs.bodyRequester = requester;
-            systemArgs.pagesQueue = pages;
-            systemArgs.processor = processor;
-            systemArgs.technologiesQueue = processed;
-            systemArgs.outputSink = sink;
-
-            MetricsMonitor metrics = new MetricsMonitor(
-                    "metrics.txt",
-                    systemArgs
-            );
-
-            loader.start();
-            requester.start();
-            processor.start();
-            sink.start();
-            metrics.start();
+            new System()
+                    .setUrlsQueue(new LinkedBlockingQueue<>(100))
+                    .setPagesQueue(new LinkedBlockingQueue<>(100))
+                    .setTechnologiesQueue(new LinkedBlockingQueue<>(100))
+                    .createUrlFileLoader(args.fileName)
+                    .createBodyRequester()
+                    .createTechnologyProcessor()
+                    .createOutputSink()
+                    .createMetricsMonitor("metrics.txt")
+                    .start();
         }
 
     }
