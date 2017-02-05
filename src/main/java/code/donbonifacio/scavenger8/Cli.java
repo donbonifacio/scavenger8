@@ -1,5 +1,6 @@
 package code.donbonifacio.scavenger8;
 
+import code.donbonifacio.scavenger8.technologies.OutputSink;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.slf4j.Logger;
@@ -76,10 +77,12 @@ public final class Cli {
             UrlFileLoader loader = new UrlFileLoader(args.fileName, urls);
             BodyRequester requester = new BodyRequester(urls, pages);
             TechnologyProcessor processor = new TechnologyProcessor(pages, processed);
+            OutputSink sink = new OutputSink(processed);
 
             loader.start();
             requester.start();
             processor.start();
+            sink.start();
         }
 
     }

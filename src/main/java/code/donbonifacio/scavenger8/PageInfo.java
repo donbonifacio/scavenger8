@@ -55,6 +55,16 @@ public final class PageInfo {
     }
 
     /**
+     * Returns true if the given PageInfo is a poison marker.
+     *
+     * @param page the PageInfo to test
+     * @return true if poison
+     */
+    public static boolean isPoison(final PageInfo page) {
+        return page == POISON;
+    }
+
+    /**
      * Creates a new PageInfo from a given URL.
      *
      * @param url the url

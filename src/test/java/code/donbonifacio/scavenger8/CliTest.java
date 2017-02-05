@@ -15,4 +15,12 @@ public class CliTest extends TestCase {
         Cli.main(new String[] {"-help"});
     }
 
+    /**
+     * Smoke test for a basic file
+     */
+    public void testSingleLineFile() {
+        final String fileName = "src/test/resources/SingleLine.txt";
+        Cli.main(new String[]{"-file", fileName});
+    }
+
 }
