@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The BodyRequester class is responsible for fetching raw PageInfo's from
@@ -73,9 +74,18 @@ public final class BodyRequester {
                 try{
                     PageInfo page = urlsQueue.take();
 
-                    if(page.equals(PageInfo.POISON)) {
+                    if(PageInfo.isPoison(page)) {
+                        logger.trace("POISON Received!");
+
+                        logger.trace("Shutting down worker pool...");
+                        executorService.shutdown();
+
+                        logger.trace("Waiting current tasks to finish...");
+                        executorService.awaitTermination(10, TimeUnit.MINUTES);
+
                         logger.debug("Work finished, submitting {}", page);
                         processorsQueue.put(page);
+
                         break;
                     }
 
@@ -88,8 +98,6 @@ public final class BodyRequester {
                 }
             }
 
-            logger.trace("Shutting down worker pool...");
-            executorService.shutdown();
         }
 
     }

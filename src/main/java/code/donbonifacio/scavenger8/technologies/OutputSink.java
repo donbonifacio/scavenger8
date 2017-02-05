@@ -44,7 +44,7 @@ public final class OutputSink {
                 try {
                     PageInfo page = input.take();
 
-                    logger.info(page.toString());
+                    logger.info("Result: {}", page);
 
                     if (PageInfo.isPoison(page)) {
                         break;

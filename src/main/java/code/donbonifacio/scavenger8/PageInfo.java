@@ -128,7 +128,7 @@ public final class PageInfo {
      */
     @Override
     public String toString() {
-        if(this == POISON) {
+        if(isPoison(this)) {
             return "==*== POISON ==*==";
         }
         return String.format("PageInfo[url=%s body=%s matches=%s]",

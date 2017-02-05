@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -25,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class TechnologyProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(BodyRequester.class);
+    private static final Logger logger = LoggerFactory.getLogger(TechnologyProcessor.class);
     private final BlockingQueue<PageInfo> pages;
     private final BlockingQueue<PageInfo> technologies;
     private final ExecutorService executorService;
@@ -77,7 +78,15 @@ public final class TechnologyProcessor {
                 try{
                     PageInfo page = pages.take();
 
-                    if(page.equals(PageInfo.POISON)) {
+                    if(PageInfo.isPoison(page)) {
+                        logger.trace("POISON Received!");
+
+                        logger.trace("Shutting down worker pool...");
+                        executorService.shutdown();
+
+                        logger.trace("Waiting current tasks to finish...");
+                        executorService.awaitTermination(10, TimeUnit.MINUTES);
+
                         logger.debug("Work finished, submitting {}", page);
                         technologies.put(page);
                         break;
@@ -92,8 +101,6 @@ public final class TechnologyProcessor {
                 }
             }
 
-            logger.trace("Shutting down worker pool...");
-            executorService.shutdown();
         }
 
     }
@@ -128,6 +135,8 @@ public final class TechnologyProcessor {
                         .collect(ImmutableList.toImmutableList());
 
                 PageInfo withMatches = info.withMatches(matches);
+
+                logger.debug("Processed {}", withMatches);
                 technologies.put(withMatches);
 
             } catch (InterruptedException e) {
