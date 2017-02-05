@@ -12,17 +12,23 @@ public class CliTest extends TestCase {
      *
      */
     public void testHelp() {
-        Cli.main(new String[] {"-help"});
-        assertTrue(true);
+        try {
+            Cli.main(new String[] {"-help"});
+        } catch(Exception ex) {
+            fail(ex.getMessage());
+        }
     }
 
     /**
      * Smoke test for a basic file
      */
     public void testSingleLineFile() {
-        final String fileName = "src/test/resources/SingleLine.txt";
-        Cli.main(new String[]{"-file", fileName});
-        assertTrue(true);
+        try {
+            final String fileName = "src/test/resources/SingleLine.txt";
+            Cli.main(new String[]{"-file", fileName});
+        } catch(Exception ex) {
+            fail(ex.getMessage());
+        }
     }
 
 }

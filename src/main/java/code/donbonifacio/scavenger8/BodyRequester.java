@@ -33,6 +33,7 @@ public final class BodyRequester {
     private final ExecutorService gateKeeper;
     private final AtomicLong taskCounter = new AtomicLong();
     private final AtomicLong processedCounter = new AtomicLong();
+    private final int nThreads;
 
     /**
      * Creates a new BodyRequester.
@@ -56,6 +57,7 @@ public final class BodyRequester {
         this.processorsQueue = processorsQueue;
         this.executorService = Executors.newFixedThreadPool(nThreads);
         this.gateKeeper = Executors.newSingleThreadExecutor();
+        this.nThreads = nThreads;
     }
 
     /**
@@ -75,6 +77,12 @@ public final class BodyRequester {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try{
+                    if(taskCounter.get() >= nThreads) {
+                        // back pressure
+                        Thread.sleep(1000);
+                        continue;
+                    }
+
                     PageInfo page = urlsQueue.take();
 
                     if(PageInfo.isPoison(page)) {
@@ -89,12 +97,13 @@ public final class BodyRequester {
                         logger.debug("Work finished, submitting {}", page);
                         processorsQueue.put(page);
 
-                        break;
+                        Thread.currentThread().interrupt();
+                    } else {
+                        logger.trace("Processing body request for {}", page);
+                        taskCounter.incrementAndGet();
+                        executorService.execute(new RequestBody(page));
                     }
 
-                    logger.trace("Processing body request for {}", page);
-                    taskCounter.incrementAndGet();
-                    executorService.execute(new RequestBody(page));
 
                 } catch (InterruptedException e) {
                     logger.warn("Main BodyRequester interrupted", e);

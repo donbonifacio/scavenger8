@@ -22,14 +22,6 @@ public final class System {
     private BlockingQueue<PageInfo> technologiesQueue;
 
     /**
-     * Public ctor
-     */
-    public System() {
-        // nothing to do, object should be built with the
-        // builder methods
-    }
-
-    /**
      * Starts all system components.
      *
      * @return this system

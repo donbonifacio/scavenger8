@@ -34,6 +34,7 @@ public final class TechnologyProcessor {
     private final ExecutorService gateKeeper;
     private final AtomicLong taskCounter = new AtomicLong();
     private final AtomicLong processedCounter = new AtomicLong();
+    private final int nThreads;
 
     /**
      * The list ot matchers to process. Add new ones here!
@@ -65,6 +66,7 @@ public final class TechnologyProcessor {
         this.technologies = checkNotNull(technologies);
         this.gateKeeper = Executors.newSingleThreadExecutor();
         this.executorService = Executors.newFixedThreadPool(nThreads);
+        this.nThreads = nThreads;
     }
 
     /**
@@ -79,6 +81,12 @@ public final class TechnologyProcessor {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try{
+                    if(taskCounter.get() >= nThreads) {
+                        // back pressure
+                        Thread.sleep(1000);
+                        continue;
+                    }
+
                     PageInfo page = pages.take();
 
                     if(PageInfo.isPoison(page)) {
@@ -92,12 +100,13 @@ public final class TechnologyProcessor {
 
                         logger.debug("Work finished, submitting {}", page);
                         technologies.put(page);
-                        break;
-                    }
 
-                    logger.trace("Processing technology matchers {}", page);
-                    taskCounter.incrementAndGet();
-                    executorService.execute(new ProcessTechnologies(page));
+                        Thread.currentThread().interrupt();
+                    } else {
+                        logger.trace("Processing technology matchers {}", page);
+                        taskCounter.incrementAndGet();
+                        executorService.execute(new ProcessTechnologies(page));
+                    }
 
                 } catch (InterruptedException e) {
                     logger.warn("Main TechnologyProcessor interrupted", e);
