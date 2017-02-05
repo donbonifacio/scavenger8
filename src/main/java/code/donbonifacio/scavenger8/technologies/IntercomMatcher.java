@@ -5,15 +5,15 @@ import java.util.regex.Pattern;
 /**
  * Macthes PageInfo's for Segment.io
  */
-public final class SegmentMatcher extends RegexScrapperMatcher {
+public final class IntercomMatcher extends RegexScrapperMatcher {
 
-    private static final Pattern PATTERN = Pattern.compile(".*cdn\\.segment\\.com.*", Pattern.DOTALL);
-    public static final SegmentMatcher INSTANCE = new SegmentMatcher();
+    private static final Pattern PATTERN = Pattern.compile(".*widget\\.intercom\\.io\\/widget.*", Pattern.DOTALL);
+    public static final TechnologyMatcher INSTANCE = new IntercomMatcher();
 
     /**
      * Disallow creating instances
      */
-    private SegmentMatcher() {
+    private IntercomMatcher() {
     }
 
     /**
@@ -23,7 +23,7 @@ public final class SegmentMatcher extends RegexScrapperMatcher {
      */
     @Override
     public String getName() {
-        return "Segment.io";
+        return "Intercom.io";
     }
 
     /**

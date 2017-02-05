@@ -4,24 +4,24 @@ import code.donbonifacio.scavenger8.PageInfo;
 import junit.framework.TestCase;
 
 /**
- * Test SegmentMatcher
+ * Test GoogleTagManagerMatcher
  */
-public class SegmentMatcherTest extends TestCase {
+public class GoogleTagManagerMatcherTest extends TestCase {
 
-    private final static TechnologyMatcher SUT = SegmentMatcher.INSTANCE;
+    private final static TechnologyMatcher SUT = GoogleTagManagerMatcher.INSTANCE;
 
     /**
      * Tests the matcher name
      */
     public void testMatcherName() {
-        assertEquals("Segment.io", SUT.getName());
+        assertEquals("Google Tag Manager", SUT.getName());
     }
 
     /**
      * Tests a positive match
      */
     public void testSuccessMatch() {
-        PageInfo page = PageInfo.fromUrl("http://example.com").withBody("text cdn.segment.com text");
+        PageInfo page = PageInfo.fromUrl("http://example.com").withBody("text\n //www.googletagmanager.com/ns.html\n text");
         assertTrue("Should match regex", SUT.isMatch(page));
     }
 

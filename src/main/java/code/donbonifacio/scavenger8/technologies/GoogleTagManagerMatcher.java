@@ -1,19 +1,20 @@
 package code.donbonifacio.scavenger8.technologies;
 
+
 import java.util.regex.Pattern;
 
 /**
- * Macthes PageInfo's for Segment.io
+ * Macthes PageInfo's for Google Tag Manager
  */
-public final class SegmentMatcher extends RegexScrapperMatcher {
+public final class GoogleTagManagerMatcher extends RegexScrapperMatcher {
 
-    private static final Pattern PATTERN = Pattern.compile(".*cdn\\.segment\\.com.*", Pattern.DOTALL);
-    public static final SegmentMatcher INSTANCE = new SegmentMatcher();
+    private static final Pattern PATTERN = Pattern.compile(".*\\/\\/www\\.googletagmanager\\.com\\/ns\\.html.*", Pattern.DOTALL);
+    public static final TechnologyMatcher INSTANCE = new GoogleTagManagerMatcher();
 
     /**
      * Disallow creating instances
      */
-    private SegmentMatcher() {
+    private GoogleTagManagerMatcher() {
     }
 
     /**
@@ -23,7 +24,7 @@ public final class SegmentMatcher extends RegexScrapperMatcher {
      */
     @Override
     public String getName() {
-        return "Segment.io";
+        return "Google Tag Manager";
     }
 
     /**
