@@ -104,7 +104,6 @@ public final class BodyRequester {
                         executorService.execute(new RequestBody(page));
                     }
 
-
                 } catch (InterruptedException e) {
                     logger.warn("Main BodyRequester interrupted", e);
                     Thread.currentThread().interrupt();
@@ -132,6 +131,13 @@ public final class BodyRequester {
             this.info = info;
         }
 
+        /**
+         * Creates a configured HttpConnection.
+         *
+         * @param url the url for the connection
+         * @return the HttpConnection
+         * @throws IOException
+         */
         private HttpURLConnection getHttpConnection(final String url)
             throws IOException {
 
@@ -183,8 +189,11 @@ public final class BodyRequester {
                 processedCounter.incrementAndGet();
                 processorsQueue.put(withBody);
 
-            } catch(IOException | InterruptedException ex) {
-                logger.error("Error on HTTP request", ex);
+            } catch(IOException ex) {
+                logger.debug("Error on HTTP request", ex);
+            } catch (InterruptedException e) {
+                logger.warn("BodyRequester get response interrupted", e);
+                Thread.currentThread().interrupt();
             }
 
         }

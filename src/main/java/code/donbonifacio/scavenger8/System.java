@@ -1,7 +1,5 @@
 package code.donbonifacio.scavenger8;
 
-import code.donbonifacio.scavenger8.technologies.OutputSink;
-
 import java.util.concurrent.BlockingQueue;
 
 import static com.google.common.base.Preconditions.checkNotNull;

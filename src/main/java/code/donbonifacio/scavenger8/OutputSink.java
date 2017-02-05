@@ -1,6 +1,5 @@
-package code.donbonifacio.scavenger8.technologies;
+package code.donbonifacio.scavenger8;
 
-import code.donbonifacio.scavenger8.PageInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

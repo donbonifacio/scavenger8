@@ -4,7 +4,7 @@ In order to reach out to customers that would most likely benefit from using a s
 
 ## The Challenge
 
-Given a [list of websites](/problems/assets/technology%20scavenger/alexa1M.zip), list all websites that use these technologies:
+Given a [list of websites](https://github.com/talkdesk-challenges/challenges/raw/master/problems/assets/technology%20scavenger/alexa1M.zip), list all websites that use these technologies:
 
 - Magento
 - Shopify

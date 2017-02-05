@@ -38,10 +38,7 @@ public final class Cli {
          * @return a representation of the args
          */
         @Override public String toString() {
-            if(help) {
-                return "Args: help";
-            }
-            return "??";
+            return String.format("Args: file: %s", fileName);
         }
     }
 
@@ -66,12 +63,12 @@ public final class Cli {
         if(args.help) {
             commander.usage();
         } else {
-            logger.info("scavenger8");
+            logger.info("scavenger8 - {}", args);
 
             new System()
-                    .setUrlsQueue(new LinkedBlockingQueue<>(100))
-                    .setPagesQueue(new LinkedBlockingQueue<>(100))
-                    .setTechnologiesQueue(new LinkedBlockingQueue<>(100))
+                    .setUrlsQueue(new LinkedBlockingQueue<>(1000))
+                    .setPagesQueue(new LinkedBlockingQueue<>(1000))
+                    .setTechnologiesQueue(new LinkedBlockingQueue<>(1000))
                     .createUrlFileLoader(args.fileName)
                     .createBodyRequester()
                     .createTechnologyProcessor()

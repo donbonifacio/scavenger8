@@ -83,7 +83,7 @@ public final class MetricsMonitor {
                     long elapsed = totalProcessed - last;
                     builder.append(String.format("OutputSink processed %d%n", totalProcessed));
                     builder.append(String.format("Speed: %d per second%n", elapsed));
-                    long estimate100k = elapsed == 0 ? 0 : 100000 / elapsed / 60;
+                    long estimate100k = elapsed == 0 ? Integer.MAX_VALUE : 100000 / elapsed / 60;
                     builder.append(String.format("It wil take %s minutes to process 100K at this speed%n", estimate100k));
                     builder.append(java.lang.System.lineSeparator());
 

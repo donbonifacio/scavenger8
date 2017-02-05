@@ -81,7 +81,7 @@ public final class PageInfo {
      * @return a new PageInfo
      */
     public PageInfo withBody(final String body) {
-        return new PageInfo(url, body);
+        return new PageInfo(url, checkNotNull(body));
     }
 
     /**
