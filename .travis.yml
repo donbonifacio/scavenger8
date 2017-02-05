@@ -10,8 +10,15 @@ addons:
     token:
       secure: "rM/7M4r1Is7z8T+3ZX8TcZiWljYNwYjmFk4N/mp2bkm1ffaiL3qWHRoBaQtWE2aWHmczcH8Yf/EuzvYSmvUX7/uWjT0h5y7R0OuCadRmdE4yFopxsI549g34fty1wuaLdY27VHwS7FQTThxdzGpxl5SKZgBKohhFBbyGolghSyqnQgT71IiEZn9fs3j9brbC5YT0TN++zeBMQE5F9B35I3Y55sb5cLpJ26zVUZoU7dks8qGJ55CHTCtFcEQJqnJG8KY8epF71hM0xL7IAMa/5sLfN5tIjGQez0S5vc34OLIB3gjv/Nf6E7DT18NZqFAg6tcwJMHzsk96BmG5iLITMQhguSjDvnClYN8+mHFZlr+5QvcJR5FFWSmf6OgEsq0sn4K6nNmrWSaAYy5kVG9DSk2GQI7vQNTuNvmvANSbGde74+AF+SBfZYbHaCf8/QFEOu1O3tISfVbB2qmPnDD8Tr1RamXnYNM+mZGpGVvbtK9PN+D3HPNDRkHq+g5VvtWiaxw98F1atYCiDl6n3eQ5Rgikz1YupvQOAsHmn6LTkx55O1Q6W5xpcRaXGJVC+i0FW2DdgjzwhUhfwRoR/JoCc/OtO8lJTf+nCT++W9xT5CSPYrNYm47CfruEcRi7+K85wcxZv+HLtVvTzOx1Hh4NDPc9h7j8RK8x9zdqbkEAdas="
 
-
 cache:
   directories:
     - '$HOME/.m2/repository'
     - '$HOME/.sonar/cache'
+
+before_install:
+  - curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar >jpm4j.jar
+  - java -jar jpm4j.jar -u init
+  - ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
+
+after_success:
+  - ~/jpm/bin/codacy-coverage-reporter -l Java -r build/reports/jacoco/test/jacocoTestReport.xml
