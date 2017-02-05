@@ -132,6 +132,19 @@ public final class BodyRequester {
             this.info = info;
         }
 
+        private HttpURLConnection getHttpConnection(final String url)
+            throws IOException {
+
+            final URL obj = new URL(url);
+            final HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            con.setReadTimeout(5000);
+            con.setRequestMethod("GET");
+            con.setRequestProperty("User-Agent", "https://github.com/donbonifacio/scavenger8");
+
+            return con;
+        }
+
         /**
          * Performs the necessary HTTP requests to obtain the response body
          * for an URL.
@@ -142,15 +155,17 @@ public final class BodyRequester {
             logger.trace("Requesting page body for {}", info);
 
             try {
-
-                final URL obj = new URL(url);
-                final HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-                con.setRequestMethod("GET");
-                con.setRequestProperty("User-Agent", "https://github.com/donbonifacio/scavenger8");
+                HttpURLConnection con = getHttpConnection(url);
 
                 final int responseCode = con.getResponseCode();
-                logger.trace("Got status {} for {}", responseCode, info);
+                logger.trace("Got status {} for {} Location:{}", responseCode, info, con.getHeaderField("Location"));
+
+                if(responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                        responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+                    final String newUrl = con.getHeaderField("Location");
+                    logger.debug("Redirecting {} to {}", url, newUrl);
+                    con = getHttpConnection(newUrl);
+                }
 
                 BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
                 String inputLine;

@@ -1,5 +1,7 @@
 package code.donbonifacio.scavenger8;
 
+import code.donbonifacio.scavenger8.technologies.GoogleTagManagerMatcher;
+import code.donbonifacio.scavenger8.technologies.IntercomMatcher;
 import code.donbonifacio.scavenger8.technologies.SegmentMatcher;
 import code.donbonifacio.scavenger8.technologies.TechnologyMatcher;
 import com.google.common.collect.ImmutableList;
@@ -42,6 +44,8 @@ public final class TechnologyProcessor {
     private static final List<TechnologyMatcher> technologyMatchers =
             ImmutableList.<TechnologyMatcher>builder()
                     .add(SegmentMatcher.INSTANCE)
+                    .add(IntercomMatcher.INSTANCE)
+                    .add(GoogleTagManagerMatcher.INSTANCE)
                     .build();
 
     /**
