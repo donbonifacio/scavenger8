@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
  */
 public final class BodyRequester {
 
-    static final Logger logger = LoggerFactory.getLogger(BodyRequester.class);
+    private static final Logger logger = LoggerFactory.getLogger(BodyRequester.class);
     private final BlockingQueue<PageInfo> urlsQueue;
     private final BlockingQueue<PageInfo> processorsQueue;
     private final ExecutorService executorService;

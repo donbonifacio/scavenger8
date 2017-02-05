@@ -1,5 +1,11 @@
 package code.donbonifacio.scavenger8;
 
+import code.donbonifacio.scavenger8.technologies.TechnologyMatcher;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -13,6 +19,7 @@ public final class PageInfo {
 
     private final String url;
     private final String body;
+    private final List<TechnologyMatcher> matches;
     public static final PageInfo POISON = new PageInfo(null);
 
     /**
@@ -31,8 +38,20 @@ public final class PageInfo {
      * @param body the body
      */
     private PageInfo(final String url, final String body) {
+        this(url, body, ImmutableList.of());
+    }
+
+    /**
+     * Creates a new PageInfo with URL, body and matched technologies.
+     *
+     * @param url the url
+     * @param body the body
+     * @param matches the technology matches
+     */
+    private PageInfo(final String url, final String body, final List<TechnologyMatcher> matches) {
         this.url = url;
         this.body = body;
+        this.matches = matches;
     }
 
     /**
@@ -56,6 +75,16 @@ public final class PageInfo {
     }
 
     /**
+     * Returns a copy of this PageInfo, with the given matches.
+     *
+     * @param matches the technology mathes
+     * @return a new PageInfo
+     */
+    public PageInfo withMatches(final List<TechnologyMatcher> matches) {
+        return new PageInfo(url, body, ImmutableList.copyOf(matches));
+    }
+
+    /**
      * Gets the associated URL.
      *
      * @return the string url
@@ -74,6 +103,15 @@ public final class PageInfo {
     }
 
     /**
+     * Gets the technology matches.
+     *
+     * @return the technology mathes
+     */
+    public List<TechnologyMatcher> getMatches() {
+        return matches;
+    }
+
+    /**
      * The String representation of the object.
      *
      * @return a string representation of this String
@@ -83,6 +121,12 @@ public final class PageInfo {
         if(this == POISON) {
             return "==*== POISON ==*==";
         }
-        return String.format("PageInfo[url=%s body=%s]", url, body == null ? "false" : "true");
+        return String.format("PageInfo[url=%s body=%s matches=%s]",
+                url,
+                body == null ? "false" : "true",
+                matches.stream()
+                        .map(TechnologyMatcher::getName)
+                        .collect(Collectors.joining(","))
+        );
     }
 }

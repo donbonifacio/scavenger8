@@ -71,12 +71,15 @@ public final class Cli {
 
             BlockingQueue<PageInfo> urls = new LinkedBlockingQueue<>(100);
             BlockingQueue<PageInfo> pages = new LinkedBlockingQueue<>(100);
+            BlockingQueue<PageInfo> processed = new LinkedBlockingQueue<>(100);
 
             UrlFileLoader loader = new UrlFileLoader(args.fileName, urls);
             BodyRequester requester = new BodyRequester(urls, pages);
+            TechnologyProcessor processor = new TechnologyProcessor(pages, processed);
 
             loader.start();
             requester.start();
+            processor.start();
         }
 
     }
