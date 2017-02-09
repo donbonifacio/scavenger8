@@ -1,5 +1,6 @@
 package code.donbonifacio.scavenger8;
 
+import code.donbonifacio.scavenger8.processors.PipelineProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,10 +10,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The BodyRequester class is responsible for fetching raw PageInfo's from
@@ -24,16 +21,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * the worker pool. No more work will be fetch from the source queue, but
  * the current executing tasks will still finish.
  */
-public final class BodyRequester {
+public final class BodyRequester implements PipelineProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(BodyRequester.class);
-    private final BlockingQueue<PageInfo> urlsQueue;
-    private final BlockingQueue<PageInfo> processorsQueue;
-    private final ExecutorService executorService;
-    private final ExecutorService gateKeeper;
-    private final AtomicLong taskCounter = new AtomicLong();
-    private final AtomicLong processedCounter = new AtomicLong();
-    private final int nThreads;
+    private final WorkerPoolWithGateKeeper workerPool;
 
     /**
      * Creates a new BodyRequester.
@@ -53,65 +44,23 @@ public final class BodyRequester {
      * @param nThreads the number of worker threads to spawn
      */
     public BodyRequester(final BlockingQueue<PageInfo> urlsQueue, final BlockingQueue<PageInfo> processorsQueue, int nThreads) {
-        this.urlsQueue = urlsQueue;
-        this.processorsQueue = processorsQueue;
-        this.executorService = Executors.newFixedThreadPool(nThreads);
-        this.gateKeeper = Executors.newSingleThreadExecutor();
-        this.nThreads = nThreads;
+        this.workerPool = new WorkerPoolWithGateKeeper(
+                urlsQueue,
+                processorsQueue,
+                nThreads,
+                BodyRequester::createTask
+        );
     }
 
     /**
-     * Utility class that will control the flow on this service. It will
-     * receive raw PageInfo's with just an URL, and will delegate the response
-     * fetching to the `executorService`.
+     * Creates a RequestBody task.
      *
-     * However, if a special mark PageInfo.POISON is received, the `executorService`
-     * will be shutdown and the work is considered completed.
+     * @param page the page to process
+     * @param outputQueue the output queue
+     * @return a runnable
      */
-    private class Runner implements Runnable {
-
-        /**
-         * Main loop, gathers and distributes work.
-         */
-        @Override
-        public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                try{
-                    if(taskCounter.get() >= nThreads) {
-                        // back pressure
-                        Thread.sleep(1000);
-                        continue;
-                    }
-
-                    PageInfo page = urlsQueue.take();
-
-                    if(PageInfo.isPoison(page)) {
-                        logger.trace("POISON Received!");
-
-                        logger.trace("Shutting down worker pool...");
-                        executorService.shutdown();
-
-                        logger.trace("Waiting current tasks to finish...");
-                        executorService.awaitTermination(10, TimeUnit.MINUTES);
-
-                        logger.debug("Work finished, submitting {}", page);
-                        processorsQueue.put(page);
-
-                        Thread.currentThread().interrupt();
-                    } else {
-                        logger.trace("Processing body request for {}", page);
-                        taskCounter.incrementAndGet();
-                        executorService.execute(new RequestBody(page));
-                    }
-
-                } catch (InterruptedException e) {
-                    logger.warn("Main BodyRequester interrupted", e);
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-        }
-
+    private static Runnable createTask(final PageInfo page, final BlockingQueue<PageInfo> outputQueue) {
+        return new RequestBody(page, outputQueue);
     }
 
     /**
@@ -119,16 +68,18 @@ public final class BodyRequester {
      * request and obtains the response body. It will then put on the
      * destination queue a new PageInfo with the body.
      */
-    private class RequestBody implements Runnable {
+    private static class RequestBody implements Runnable {
 
         private final PageInfo info;
+        private final BlockingQueue<PageInfo> outputQueue;
 
         /**
          * Create a RequestBody
          * @param info the page to process
          */
-        RequestBody(final PageInfo info) {
+        RequestBody(final PageInfo info, final BlockingQueue<PageInfo> outputQueue) {
             this.info = info;
+            this.outputQueue = outputQueue;
         }
 
         /**
@@ -146,7 +97,7 @@ public final class BodyRequester {
 
             con.setReadTimeout(5000);
             con.setRequestMethod("GET");
-            con.setRequestProperty("User-Agent", "https://github.com/donbonifacio/scavenger8");
+            con.setRequestProperty("User-Agent", "scavenger8");
 
             return con;
         }
@@ -161,6 +112,7 @@ public final class BodyRequester {
             logger.trace("Requesting page body for {}", info);
 
             try {
+                Thread.currentThread().setName(url);
                 HttpURLConnection con = getHttpConnection(url);
 
                 final int responseCode = con.getResponseCode();
@@ -170,6 +122,7 @@ public final class BodyRequester {
                         responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
                     final String newUrl = con.getHeaderField("Location");
                     logger.debug("Redirecting {} to {}", url, newUrl);
+                    Thread.currentThread().setName(newUrl);
                     con = getHttpConnection(newUrl);
                 }
 
@@ -185,9 +138,7 @@ public final class BodyRequester {
                 PageInfo withBody = info.withBody(response.toString());
                 logger.debug("Submitting {}", withBody);
 
-                taskCounter.decrementAndGet();
-                processedCounter.incrementAndGet();
-                processorsQueue.put(withBody);
+                outputQueue.put(withBody);
 
             } catch(IOException ex) {
                 logger.debug("Error on HTTP request", ex);
@@ -200,38 +151,13 @@ public final class BodyRequester {
     }
 
     /**
-     * Starts the main runner, in another Thread, and returns right away.
-     */
-    public void start() {
-        gateKeeper.execute(new Runner());
-        gateKeeper.shutdown();
-    }
-
-    /**
-     * True if this service is shutdown.
+     * Gets the worker pool in use by this service.
      *
-     * @return true if it's shutdown
+     * @return the worker pool
      */
-    public boolean isShutdown() {
-        return executorService.isShutdown();
-    }
-
-    /**
-     * Gets the number of current tasks running and/or scheduled to run.
-     *
-     * @return the count of tasks
-     */
-    public long getTaskCount() {
-        return taskCounter.get();
-    }
-
-    /**
-     * Gets the number of processed tasks.
-     *
-     * @return the count of processed tasks
-     */
-    public long getProcessedCount() {
-        return processedCounter.get();
+    @Override
+    public WorkerPoolWithGateKeeper getWorkerPool() {
+        return workerPool;
     }
 
 }

@@ -1,5 +1,6 @@
 package code.donbonifacio.scavenger8;
 
+import code.donbonifacio.scavenger8.processors.PipelineProcessor;
 import code.donbonifacio.scavenger8.technologies.GoogleTagManagerMatcher;
 import code.donbonifacio.scavenger8.technologies.IntercomMatcher;
 import code.donbonifacio.scavenger8.technologies.SegmentMatcher;
@@ -10,12 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The TechnologyProcessor is the service of the pipeline that given
@@ -27,16 +22,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * This class is ThreadSafe.
  */
-public final class TechnologyProcessor {
+public final class TechnologyProcessor implements PipelineProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TechnologyProcessor.class);
-    private final BlockingQueue<PageInfo> pages;
-    private final BlockingQueue<PageInfo> technologies;
-    private final ExecutorService executorService;
-    private final ExecutorService gateKeeper;
-    private final AtomicLong taskCounter = new AtomicLong();
-    private final AtomicLong processedCounter = new AtomicLong();
-    private final int nThreads;
+    private final WorkerPoolWithGateKeeper workerPool;
 
     /**
      * The list ot matchers to process. Add new ones here!
@@ -66,77 +55,41 @@ public final class TechnologyProcessor {
      * @param nThreads number of worker threads to spawn
      */
     public TechnologyProcessor(final BlockingQueue<PageInfo> pages, final BlockingQueue<PageInfo> technologies, int nThreads) {
-        this.pages = checkNotNull(pages);
-        this.technologies = checkNotNull(technologies);
-        this.gateKeeper = Executors.newSingleThreadExecutor();
-        this.executorService = Executors.newFixedThreadPool(nThreads);
-        this.nThreads = nThreads;
+        this.workerPool = new WorkerPoolWithGateKeeper(
+                pages,
+                technologies,
+                nThreads,
+                TechnologyProcessor::createTask
+        );
     }
 
     /**
-     * Utility class that will gather work, and send it to the worker pool.
+     * Creates a ProcessTechnologies task.
+     *
+     * @param page the page to process
+     * @param outputQueue the output queue
+     * @return a runnable
      */
-    private class Runner implements Runnable {
-
-        /**
-         * Main loop, gathers and distributes work.
-         */
-        @Override
-        public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                try{
-                    if(taskCounter.get() >= nThreads) {
-                        // back pressure
-                        Thread.sleep(1000);
-                        continue;
-                    }
-
-                    PageInfo page = pages.take();
-
-                    if(PageInfo.isPoison(page)) {
-                        logger.trace("POISON Received!");
-
-                        logger.trace("Shutting down worker pool...");
-                        executorService.shutdown();
-
-                        logger.trace("Waiting current tasks to finish...");
-                        executorService.awaitTermination(10, TimeUnit.MINUTES);
-
-                        logger.debug("Work finished, submitting {}", page);
-                        technologies.put(page);
-
-                        Thread.currentThread().interrupt();
-                    } else {
-                        logger.trace("Processing technology matchers {}", page);
-                        taskCounter.incrementAndGet();
-                        executorService.execute(new ProcessTechnologies(page));
-                    }
-
-                } catch (InterruptedException e) {
-                    logger.warn("Main TechnologyProcessor interrupted", e);
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-        }
-
+    private static Runnable createTask(final PageInfo page, final BlockingQueue<PageInfo> outputQueue) {
+        return new ProcessTechnologies(page, outputQueue);
     }
-
     /**
      * Utility class that given a PageInfo, will process it against all
      * the registered TechnologyMatcher's.
      */
-    private class ProcessTechnologies implements Runnable {
+    private static class ProcessTechnologies implements Runnable {
 
         private final PageInfo info;
+        private final BlockingQueue<PageInfo> outputQueue;
 
         /**
          * Creates a new ProcessTechnologies.
          *
          * @param info the PageInfo to process
          */
-        public ProcessTechnologies(final PageInfo info) {
+        public ProcessTechnologies(final PageInfo info, final BlockingQueue<PageInfo> outputQueue) {
             this.info = info;
+            this.outputQueue = outputQueue;
         }
 
         /**
@@ -154,9 +107,7 @@ public final class TechnologyProcessor {
                 PageInfo withMatches = info.withMatches(matches);
 
                 logger.debug("Processed {}", withMatches);
-                taskCounter.decrementAndGet();
-                processedCounter.incrementAndGet();
-                technologies.put(withMatches);
+                outputQueue.put(withMatches);
 
             } catch (InterruptedException e) {
                 logger.warn("ProcessTechnologies interrupted", e);
@@ -166,37 +117,12 @@ public final class TechnologyProcessor {
     }
 
     /**
-     * Starts the main runner, in another Thread, and returns right away.
-     */
-    public void start() {
-        gateKeeper.execute(new Runner());
-        gateKeeper.shutdown();
-    }
-
-    /**
-     * True if this service is shutdown.
+     * Gets the worker pool in use by this service.
      *
-     * @return true if it's shutdown
+     * @return the worker pool
      */
-    public boolean isShutdown() {
-        return executorService.isShutdown();
-    }
-
-    /**
-     * Gets the number of current tasks running and/or scheduled to run.
-     *
-     * @return the count of tasks
-     */
-    public long getTaskCount() {
-        return taskCounter.get();
-    }
-
-    /**
-     * Gets the number of processed tasks.
-     *
-     * @return the count of processed tasks
-     */
-    public long getProcessedCount() {
-        return processedCounter.get();
+    @Override
+    public WorkerPoolWithGateKeeper getWorkerPool() {
+        return workerPool;
     }
 }
